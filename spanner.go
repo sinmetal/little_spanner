@@ -7,10 +7,10 @@ import (
 	"cloud.google.com/go/spanner"
 )
 
-func CreateClient(ctx context.Context, db string) *spanner.Client {
+func CreateClient(ctx context.Context, db string, spannerMinOpened uint64) *spanner.Client {
 	o := spanner.ClientConfig{
 		SessionPoolConfig: spanner.SessionPoolConfig{
-			MinOpened: 1,
+			MinOpened: spannerMinOpened,
 		},
 	}
 	dataClient, err := spanner.NewClientWithConfig(ctx, db, o)

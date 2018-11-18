@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/spanner"
-	"go.opencensus.io/trace"
 )
 
 type Tweet struct {
@@ -20,7 +19,7 @@ type TweetStore struct {
 }
 
 func (s *TweetStore) Insert(ctx context.Context, id string) error {
-	ctx, span := trace.StartSpan(ctx, "/little_spanner/insert")
+	ctx, span := startSpan(ctx, "/little_spanner/insert")
 	defer span.End()
 
 	now := time.Now()
