@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"time"
 
-	"go.opencensus.io/trace"
 	"cloud.google.com/go/spanner"
+	"go.opencensus.io/trace"
 )
 
 type Tweet struct {
-	ID string `spanner:"Id"`
-	CreatedAt time.Time
+	ID         string `spanner:"Id"`
+	CreatedAt  time.Time
 	CommitedAt time.Time
 }
 
@@ -28,8 +28,8 @@ func (s *TweetStore) Insert(ctx context.Context, id string) error {
 	ml := []*spanner.Mutation{}
 	for i := 0; i < 3; i++ {
 		t := Tweet{
-			ID : id,
-			CreatedAt:now,
+			ID:         id,
+			CreatedAt:  now,
 			CommitedAt: spanner.CommitTimestamp,
 		}
 		m, err := spanner.InsertStruct(fmt.Sprintf("Tweet%d", i), t)

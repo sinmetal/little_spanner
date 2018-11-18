@@ -8,7 +8,12 @@ import (
 )
 
 func CreateClient(ctx context.Context, db string) *spanner.Client {
-	dataClient, err := spanner.NewClient(ctx, db)
+	o := spanner.ClientConfig{
+		SessionPoolConfig: spanner.SessionPoolConfig{
+			MinOpened: 1,
+		},
+	}
+	dataClient, err := spanner.NewClientWithConfig(ctx, db, o)
 	if err != nil {
 		log.Fatal(err)
 	}

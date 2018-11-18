@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"contrib.go.opencensus.io/exporter/stackdriver"
-	"go.opencensus.io/trace"
 	"github.com/google/uuid"
+	"go.opencensus.io/trace"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	ctx := context.Background()
 	sc := CreateClient(ctx, spannerDatabase)
 	ts := TweetStore{
-		sc:sc,
+		sc: sc,
 	}
 
 	for i := 0; i < 3600; i++ {
@@ -48,4 +48,3 @@ func main() {
 		time.Sleep(3 * time.Minute)
 	}
 }
-
