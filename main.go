@@ -63,5 +63,5 @@ func main() {
 }
 
 func startSpan(ctx context.Context, name string) (context.Context, *trace.Span) {
-	return trace.StartSpan(ctx, fmt.Sprintf("/little_spanner/min-%i/%s", spannerMinOpened, name))
+	return trace.StartSpan(ctx, fmt.Sprintf("/little_spanner/min-%v/%s", spannerMinOpened, name))
 }

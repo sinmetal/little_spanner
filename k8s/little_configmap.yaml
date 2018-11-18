@@ -4,3 +4,4 @@ metadata:
   name: little-config
 data:
   SPANNER_DATABASE: projects/{project-id}/instances/{instance-id}/databases/{database}
+  SPANNER_MIN_OPENED: "1"

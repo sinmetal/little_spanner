@@ -19,7 +19,7 @@ type TweetStore struct {
 }
 
 func (s *TweetStore) Insert(ctx context.Context, id string) error {
-	ctx, span := startSpan(ctx, "/little_spanner/insert")
+	ctx, span := startSpan(ctx, "insert")
 	defer span.End()
 
 	now := time.Now()
