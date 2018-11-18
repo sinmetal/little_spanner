@@ -12,7 +12,7 @@ steps:
       - set
       - image
       - deployment/little-node
-      - insert-tweet-hash-key-dep=gcr.io/$PROJECT_ID/sinmetal/little_spanner/$BRANCH_NAME:$COMMIT_SHA
+      - little-node=gcr.io/$PROJECT_ID/sinmetal/little_spanner/$BRANCH_NAME:$COMMIT_SHA
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=asia-northeast1-b'
       - 'CLOUDSDK_CONTAINER_CLUSTER=sinmetal-tokyo'
