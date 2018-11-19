@@ -73,6 +73,11 @@ func main() {
 				log.Printf("failed tweet grand, err = %+v", err)
 			}
 		}
+		{
+			if err := ts.ReadWriteTxButReadOnlyOpe(ctx); err != nil {
+				log.Printf("failed tweet readWriteTxButReadOnlyOpe, err = %+v", err)
+			}
+		}
 
 		time.Sleep(7 * time.Minute)
 	}

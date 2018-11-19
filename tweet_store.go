@@ -131,6 +131,51 @@ func (s *TweetStore) NotFoundInsert(ctx context.Context) error {
 	return nil
 }
 
+func (s *TweetStore) ReadWriteTxButReadOnlyOpe(ctx context.Context) error {
+	ctx, span := startSpan(ctx, "readWriteTxButReadOnlyOpe")
+	defer span.End()
+
+	sql := `SELECT * FROM Tweet0 TABLESAMPLE RESERVOIR (10 ROWS);`
+	_, err := s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		{
+			iter := txn.Query(ctx, spanner.Statement{SQL: sql})
+			defer iter.Stop()
+
+			t := Tweet{}
+			for {
+				row, err := iter.Next()
+				if err == iterator.Done {
+					break
+				}
+				if err != nil {
+					return err
+				}
+				if err := row.ToStruct(&t); err != nil {
+					return err
+				}
+			}
+		}
+
+		{
+			id := uuid.New().String()
+			_, err := txn.ReadRow(ctx, "Tweet0", spanner.Key{id}, []string{"Id"})
+			if err != nil {
+				if spanner.ErrCode(err) == codes.NotFound {
+					// noop
+				} else {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *TweetStore) Grand(ctx context.Context, id string) error {
 	ctx, span := startSpan(ctx, "grand")
 	defer span.End()
