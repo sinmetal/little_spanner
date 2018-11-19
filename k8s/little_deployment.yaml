@@ -1,18 +1,21 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    name: little-node
+    app: little-node
   name: little-node
 spec:
   replicas: 1
+  selector:
+    matchLabels:
+      app: little-node
   template:
     metadata:
       labels:
-        name: little-node
+        app: little-node
     spec:
       containers:
-        - image: gcr.io/$PROJECT_ID/sinmetal/alminium_spanner/feature/id/22:60605d1308ff8d193b05aa14e3521319e72414af
+        - image: gcr.io/$PROJECT_ID/sinmetal/little_spanner/feature/id/22:60605d1308ff8d193b05aa14e3521319e72414af
           name: little-node
           envFrom:
             - configMapRef:
