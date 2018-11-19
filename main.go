@@ -78,8 +78,14 @@ func main() {
 				log.Printf("failed tweet readWriteTxButReadOnlyOpe, err = %+v", err)
 			}
 		}
+		if err := ts.ReadIndexWithUpdate(ctx); err != nil {
+			log.Printf("failed tweet readIndexWithUpdate, err = %+v", err)
+		}
+		if err := ts.ReadIndexWithInsertHeavy(ctx); err != nil {
+			log.Printf("failed tweet readIndexWithInsertHeavy, err = %+v", err)
+		}
 
-		time.Sleep(7 * time.Minute)
+		time.Sleep(3 * time.Minute)
 	}
 }
 

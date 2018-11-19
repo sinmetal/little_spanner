@@ -13,6 +13,7 @@ import (
 
 type Tweet struct {
 	ID         string `spanner:"Id"`
+	SearchID   string `spanner:"SearchId"`
 	CreatedAt  time.Time
 	CommitedAt time.Time
 }
@@ -176,6 +177,134 @@ func (s *TweetStore) ReadWriteTxButReadOnlyOpe(ctx context.Context) error {
 	return nil
 }
 
+func (s *TweetStore) ReadIndexWithUpdate(ctx context.Context) error {
+	id := uuid.New().String()
+	searchId := uuid.New().String()
+	now := time.Now()
+	{
+		ml := []*spanner.Mutation{}
+		for i := 0; i < 3; i++ {
+			t := Tweet{
+				ID:         id,
+				SearchID:   searchId,
+				CreatedAt:  now,
+				CommitedAt: spanner.CommitTimestamp,
+			}
+			m, err := spanner.InsertStruct(fmt.Sprintf("Tweet%d", i), t)
+			if err != nil {
+				return err
+			}
+			ml = append(ml, m)
+		}
+
+		_, err := s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+			return txn.BufferWrite(ml)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	_, err := s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		t := Tweet{}
+		if err := txn.Query(ctx, spanner.Statement{
+			SQL: "SELECT * FROM Tweet0@{FORCE_INDEX=Tweet0SearchId} WHERE SearchId = @SearchId",
+			Params: map[string]interface{}{
+				"SearchId": searchId,
+			},
+		}).Do(func(r *spanner.Row) error {
+			return r.ToStruct(&t)
+		}); err != nil {
+			return err
+		}
+		m, err := spanner.UpdateStruct("Tweet0", &t)
+		if err != nil {
+			return err
+		}
+
+		return txn.BufferWrite([]*spanner.Mutation{m})
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *TweetStore) ReadIndexWithInsertHeavy(ctx context.Context) error {
+	ctx, span := startSpan(ctx, "readIndexWithInsertHeavy")
+	defer span.End()
+
+	id := uuid.New().String()
+	searchId := uuid.New().String()
+	now := time.Now()
+	{
+		ml := []*spanner.Mutation{}
+		for i := 0; i < 3; i++ {
+			t := Tweet{
+				ID:         id,
+				SearchID:   searchId,
+				CreatedAt:  now,
+				CommitedAt: spanner.CommitTimestamp,
+			}
+			m, err := spanner.InsertStruct(fmt.Sprintf("Tweet%d", i), t)
+			if err != nil {
+				return err
+			}
+			ml = append(ml, m)
+		}
+
+		_, err := s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+			return txn.BufferWrite(ml)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	{
+
+		_, err := s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+			ml := []*spanner.Mutation{}
+			t := Tweet{}
+			if err := txn.Query(ctx, spanner.Statement{
+				SQL: "SELECT * FROM Tweet0@{FORCE_INDEX=Tweet0SearchId} WHERE SearchId = @SearchId",
+				Params: map[string]interface{}{
+					"SearchId": searchId,
+				},
+			}).Do(func(r *spanner.Row) error {
+				return r.ToStruct(&t)
+			}); err != nil {
+				return err
+			}
+			//um, err := spanner.UpdateStruct("Tweet0", &t)
+			//if err != nil {
+			//	return err
+			//}
+			//ml = append(ml, um)
+
+			id := uuid.New().String()
+			it := Tweet{
+				ID:         id,
+				SearchID:   id,
+				CreatedAt:  now,
+				CommitedAt: spanner.CommitTimestamp,
+			}
+			im, err := spanner.InsertStruct("Tweet0", it)
+			if err != nil {
+				return err
+			}
+			ml = append(ml, im)
+
+			return txn.BufferWrite(ml)
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (s *TweetStore) Grand(ctx context.Context, id string) error {
 	ctx, span := startSpan(ctx, "grand")
 	defer span.End()
@@ -229,7 +358,7 @@ func (s *TweetStore) Grand(ctx context.Context, id string) error {
 				if spanner.ErrCode(err) == codes.NotFound {
 					fmt.Printf("%s is not found Tweet0\n", notFoundID)
 					m, err := spanner.InsertStruct("Tweet0", Tweet{
-						ID:         id,
+						ID:         notFoundID,
 						CreatedAt:  time.Now(),
 						CommitedAt: spanner.CommitTimestamp,
 					})
