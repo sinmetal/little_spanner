@@ -45,7 +45,10 @@ func main() {
 	trace.ApplyConfig(trace.Config{DefaultSampler: trace.AlwaysSample()}) // defaultでは10,000回に1回のサンプリングになっているが、リクエストが少ないと出てこないので、とりあえず全部出す
 
 	ctx := context.Background()
-	sc := CreateClient(ctx, spannerDatabase, spannerMinOpened)
+	sc, err := CreateClientWithWarmUp(ctx, spannerDatabase, spannerMinOpened)
+	if err != nil {
+		panic(err)
+	}
 	ts := TweetStore{
 		sc: sc,
 	}
@@ -64,6 +67,13 @@ func main() {
 		if err := ts.NotFoundInsert(ctx); err != nil {
 			log.Printf("failed tweet notFoundInsert, err = %+v", err)
 		}
+		{
+			id := uuid.New().String()
+			if err := ts.Grand(ctx, id); err != nil {
+				log.Printf("failed tweet grand, err = %+v", err)
+			}
+		}
+
 		time.Sleep(3 * time.Minute)
 	}
 }

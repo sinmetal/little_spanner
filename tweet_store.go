@@ -131,18 +131,84 @@ func (s *TweetStore) NotFoundInsert(ctx context.Context) error {
 	return nil
 }
 
-func (s *TweetStore) Grand(ctx context.Context) error {
+func (s *TweetStore) Grand(ctx context.Context, id string) error {
+	ctx, span := startSpan(ctx, "grand")
+	defer span.End()
+
+	now := time.Now()
+
+	ml := []*spanner.Mutation{}
+	for i := 0; i < 3; i++ {
+		t := Tweet{
+			ID:         id,
+			CreatedAt:  now,
+			CommitedAt: spanner.CommitTimestamp,
+		}
+		m, err := spanner.InsertStruct(fmt.Sprintf("Tweet%d", i), t)
+		if err != nil {
+			return err
+		}
+		ml = append(ml, m)
+	}
+
 	_, err := s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
-		id := uuid.New().String()
+		{
+			sql := `SELECT * FROM Tweet0 TABLESAMPLE RESERVOIR (1 ROWS);`
 
-		if err := s.Insert(ctx, id); err != nil {
-			return err
-		}
-		if err := s.UpdateSamplingRow(ctx); err != nil {
-			return err
-		}
+			iter := txn.Query(ctx, spanner.Statement{SQL: sql})
+			defer iter.Stop()
 
-		return nil
+			t := Tweet{}
+			for {
+				row, err := iter.Next()
+				if err == iterator.Done {
+					break
+				}
+				if err != nil {
+					return err
+				}
+				if err := row.ToStruct(&t); err != nil {
+					return err
+				}
+			}
+			m, err := spanner.UpdateStruct("Tweet0", &t)
+			if err != nil {
+				return err
+			}
+			ml = append(ml, m)
+		}
+		{
+			notFoundID := uuid.New().String()
+			row, err := txn.ReadRow(ctx, "Tweet0", spanner.Key{notFoundID}, []string{"Id"})
+			if err != nil {
+				if spanner.ErrCode(err) == codes.NotFound {
+					fmt.Printf("%s is not found Tweet0\n", notFoundID)
+					m, err := spanner.InsertStruct("Tweet0", Tweet{
+						ID:         id,
+						CreatedAt:  time.Now(),
+						CommitedAt: spanner.CommitTimestamp,
+					})
+					if err != nil {
+						return err
+					}
+					ml = append(ml, m)
+				} else {
+					return err
+				}
+			} else {
+				t := Tweet{}
+				if err := row.ToStruct(&t); err != nil {
+					return err
+				}
+
+				m, err := spanner.UpdateStruct("Tweet0", &t)
+				if err != nil {
+					return err
+				}
+				ml = append(ml, m)
+			}
+		}
+		return txn.BufferWrite(ml)
 	})
 	if err != nil {
 		return err
