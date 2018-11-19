@@ -36,3 +36,17 @@ func TestTweetStore_Grand(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTweetStore_NotFoundInsert(t *testing.T) {
+	spannerDatabase := os.Getenv("SPANNER_DATABASE")
+
+	ctx := context.Background()
+	sc := CreateClient(ctx, spannerDatabase, 1)
+	ts := TweetStore{
+		sc: sc,
+	}
+
+	if err := ts.NotFoundInsert(ctx); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -6,4 +6,5 @@ require (
 	github.com/google/uuid v1.0.0
 	go.opencensus.io v0.18.0
 	google.golang.org/api v0.0.0-20180910000450-7ca32eb868bf
+	google.golang.org/grpc v1.14.0
 )

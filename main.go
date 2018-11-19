@@ -61,6 +61,9 @@ func main() {
 		if err := ts.UpdateSamplingRow(ctx); err != nil {
 			log.Printf("failed tweet updateSamplingRow, err = %+v", err)
 		}
+		if err := ts.NotFoundInsert(ctx); err != nil {
+			log.Printf("failed tweet notFoundInsert, err = %+v", err)
+		}
 		time.Sleep(3 * time.Minute)
 	}
 }

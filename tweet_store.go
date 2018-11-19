@@ -8,6 +8,7 @@ import (
 	"cloud.google.com/go/spanner"
 	"github.com/google/uuid"
 	"google.golang.org/api/iterator"
+	"google.golang.org/grpc/codes"
 )
 
 type Tweet struct {
@@ -77,6 +78,51 @@ func (s *TweetStore) UpdateSamplingRow(ctx context.Context) error {
 			return err
 		}
 		return txn.BufferWrite([]*spanner.Mutation{m})
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *TweetStore) NotFoundInsert(ctx context.Context) error {
+	ctx, span := startSpan(ctx, "notFoundInsert")
+	defer span.End()
+
+	id := uuid.New().String()
+	_, err := s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		ml := []*spanner.Mutation{}
+		row, err := txn.ReadRow(ctx, "Tweet0", spanner.Key{id}, []string{"Id"})
+		if err != nil {
+			if spanner.ErrCode(err) == codes.NotFound {
+				fmt.Printf("%s is not found Tweet0\n", id)
+				m, err := spanner.InsertStruct("Tweet0", Tweet{
+					ID:         id,
+					CreatedAt:  time.Now(),
+					CommitedAt: spanner.CommitTimestamp,
+				})
+				if err != nil {
+					return err
+				}
+				ml = append(ml, m)
+			} else {
+				return err
+			}
+		} else {
+			t := Tweet{}
+			if err := row.ToStruct(&t); err != nil {
+				return err
+			}
+
+			m, err := spanner.UpdateStruct("Tweet0", &t)
+			if err != nil {
+				return err
+			}
+			ml = append(ml, m)
+		}
+
+		return txn.BufferWrite(ml)
 	})
 	if err != nil {
 		return err
