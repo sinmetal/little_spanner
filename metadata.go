@@ -1,11 +1,14 @@
 package main
 
-import "cloud.google.com/go/compute/metadata"
+import (
+	"os"
+
+	"cloud.google.com/go/compute/metadata"
+)
 
 func GetProjectID() (string, error) {
 	if !metadata.OnGCE() {
-		// TODO 環境変数から取得する
-		return "default value", nil
+		return os.Getenv("GOOGLE_CLOUD_PLATFORM_PROJECT"), nil
 	}
 	projectID, err := metadata.ProjectID()
 	if err != nil {

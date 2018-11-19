@@ -54,9 +54,12 @@ func main() {
 		ctx := context.Background()
 		id := uuid.New().String()
 		if err := ts.Insert(ctx, id); err != nil {
-			log.Printf("failed tweet insert, err = %+v", err)
+			log.Printf("failed tweet Insert, err = %+v", err)
 		} else {
 			log.Printf("tweet insert id = %s", id)
+		}
+		if err := ts.UpdateSamplingRow(ctx); err != nil {
+			log.Printf("failed tweet updateSamplingRow, err = %+v", err)
 		}
 		time.Sleep(3 * time.Minute)
 	}
