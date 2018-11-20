@@ -1,2 +1,2 @@
-# little_spanner
-SessionとAbortについて調べる
+# stxabort
+Spanner Transaction Abortについて調べる

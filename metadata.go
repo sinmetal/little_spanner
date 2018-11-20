@@ -8,7 +8,7 @@ import (
 
 func GetProjectID() (string, error) {
 	if !metadata.OnGCE() {
-		return os.Getenv("GOOGLE_CLOUD_PLATFORM_PROJECT"), nil
+		return os.Getenv("GCLOUD_PROJECT"), nil
 	}
 	projectID, err := metadata.ProjectID()
 	if err != nil {

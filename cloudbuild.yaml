@@ -4,14 +4,14 @@ steps:
     args: ['build', '.']
     env: ['GO111MODULE=on']
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '--tag=gcr.io/$PROJECT_ID/sinmetal/little_spanner/$BRANCH_NAME:$COMMIT_SHA', '.']
+    args: ['build', '--tag=gcr.io/$PROJECT_ID/sinmetal/stxabort/$BRANCH_NAME:$COMMIT_SHA', '.']
   - name: 'gcr.io/cloud-builders/kubectl'
     args:
       - set
       - image
-      - deployment/little-node
-      - little-node=gcr.io/$PROJECT_ID/sinmetal/little_spanner/$BRANCH_NAME:$COMMIT_SHA
+      - deployment/stxabort-node
+      - stxabort-node=gcr.io/$PROJECT_ID/sinmetal/stxabort/$BRANCH_NAME:$COMMIT_SHA
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=asia-northeast1-b'
       - 'CLOUDSDK_CONTAINER_CLUSTER=sinmetal-tokyo'
-images: ['gcr.io/$PROJECT_ID/sinmetal/little_spanner/$BRANCH_NAME:$COMMIT_SHA']
+images: ['gcr.io/$PROJECT_ID/sinmetal/stxabort/$BRANCH_NAME:$COMMIT_SHA']

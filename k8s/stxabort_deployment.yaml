@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: stxabort-node
+  name: stxabort-node
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: stxabort-node
+  template:
+    metadata:
+      labels:
+        app: stxabort-node
+    spec:
+      containers:
+        - image: gcr.io/$PROJECT_ID/sinmetal/stxabort/feature/id/22:60605d1308ff8d193b05aa14e3521319e72414af
+          name: stxabort-node
+          envFrom:
+            - configMapRef:
+                name: stxabort-config
