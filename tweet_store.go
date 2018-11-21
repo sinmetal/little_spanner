@@ -87,6 +87,41 @@ func (s *TweetStore) UpdateSamplingRow(ctx context.Context) error {
 	return nil
 }
 
+func (s *TweetStore) UpdateSamplingRowNarrowRead(ctx context.Context) error {
+	ctx, span := startSpan(ctx, "updateSamplingRowNarrowRead")
+	defer span.End()
+
+	var id string
+	sql := `SELECT Id FROM Tweet0 TABLESAMPLE RESERVOIR (1 ROWS);`
+	err := s.sc.Single().Query(ctx, spanner.Statement{SQL: sql}).Do(func(r *spanner.Row) error {
+		return r.ColumnByName("Id", &id)
+	})
+	if err != nil {
+		return err
+	}
+	_, err = s.sc.ReadWriteTransaction(ctx, func(ctx context.Context, txn *spanner.ReadWriteTransaction) error {
+		row, err := txn.ReadRow(ctx, "Tweet0", spanner.Key{id}, []string{"Id", "CommitedAt"})
+		if err != nil {
+			return err
+		}
+		var t Tweet
+		if err := row.ToStruct(&t); err != nil {
+			return err
+		}
+
+		m := spanner.Update("Tweet0", []string{"Id", "CommitedAt"}, []interface{}{t.ID, spanner.CommitTimestamp})
+		if err != nil {
+			return err
+		}
+		return txn.BufferWrite([]*spanner.Mutation{m})
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *TweetStore) NotFoundInsert(ctx context.Context) error {
 	ctx, span := startSpan(ctx, "notFoundInsert")
 	defer span.End()
